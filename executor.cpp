@@ -24,7 +24,9 @@ string execute_cgi(vector<string> argv) {
             res += buf;
     }
     
-    pclose(p);
+    if (pclose(p) == -1) {
+        return "";
+    }
     
     return res;
 }

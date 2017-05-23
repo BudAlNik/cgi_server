@@ -5,14 +5,18 @@
 using namespace std;
 
 vector<vector<string>> tests = {
-{"test.exe"},
-{"test.exe", "1", "2", "3"},
-{"test.exe", "abacaba"}};
+{"test"},
+{"test", "1", "2", "3"},
+{"test", "abacaba"},
+{"tes"}};
 
 int main() {
     for (int i = 0; i < szof(tests); ++i) {
         cout << "Test #" << i + 1 << ":\n";
-        cout << execute_cgi(tests[i]) << endl;
+        string res = execute_cgi(tests[i]);
+        cout << "Here is an output:" << endl;
+        cout << res << endl;
+        cout << "End of output" << endl;
     }
 
     return 0;
