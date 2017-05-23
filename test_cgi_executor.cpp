@@ -5,10 +5,10 @@
 using namespace std;
 
 vector<vector<string>> tests = {
-{"test"},
-{"test", "1", "2", "3"},
-{"test", "abacaba"},
-{"tes"}};
+{"./test"},
+{"./test", "1", "2", "3"},
+{"./test", "abacaba"},
+{"./tes"}};
 
 int main() {
     for (int i = 0; i < szof(tests); ++i) {
