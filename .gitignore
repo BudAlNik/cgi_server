@@ -1,1 +1,4 @@
 *.exe
+test
+test_cgi_parser
+test_cgi_executor
