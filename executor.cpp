@@ -3,9 +3,22 @@
 
 using namespace std;
 const int SZ = 256;
-char buf[SZ];
 
-string execute_cgi(vector<string> argv) {
+
+void on_request_recieved(vector<string> argv, int fd) {
+    pid_t p = fork();
+    if (p == -1) {
+        // raise error
+        return;
+    } else if (p != 0) {
+        return;
+    } else {
+        execute_cgi(argv, fd);
+        exit(0);
+    }
+}
+
+void execute_cgi(vector<string> argv, int fd) {
     string command = "";
     for (auto s : argv) {
         command += s + " ";
@@ -14,19 +27,39 @@ string execute_cgi(vector<string> argv) {
     auto p = popen(command.c_str(), "r");
     
     if (!p) {
-        return "";
+        return;
     }
     
-    string res = "";
-
+    char buf[SZ];
     while (!feof(p)) {
-        if (fgets(buf, SZ, p) != NULL)
-            res += buf;
+        size_t cnt = fread(buf, 1, SZ, p);
+        if (cnt == 0) {
+            // raise error
+            break;
+        }
+
+        int res = write_no_signal(fd, buf, cnt);
+        if (res == -1) {
+            // raise error
+            break;
+        }
     }
     
     if (pclose(p) == -1) {
-        return "";
+        return;
     }
-    
+    return;
+}
+
+ssize_t write_no_signal(int fd, const void *buf, size_t count) {
+    int res;
+    while(true) {
+        res = write(fd, buf, count);
+        // TODO: check if partial writes are possible
+        if (res == -1 && errno == EINTR) {
+            continue;
+        }
+        break;
+    }
     return res;
 }
