@@ -8,15 +8,21 @@ vector<vector<string>> tests = {
 {"./test"},
 {"./test", "1", "2", "3"},
 {"./test", "abacaba"},
-{"./tes"}};
+{"./tes"},
+{"ls", "-la"}};
 
 int main() {
     for (int i = 0; i < szof(tests); ++i) {
         cout << "Test #" << i + 1 << ":\n";
-        string res = execute_cgi(tests[i]);
         cout << "Here is an output:" << endl;
-        cout << res << endl;
+        execute_cgi(tests[i], 1);
+        // cout << res << endl;
         cout << "End of output" << endl;
+    }
+
+    cout << "Parallel execution:" << endl;
+    for (int i = 0; i < szof(tests); ++i) {
+    	on_request_recieved(tests[i], 1);
     }
 
     return 0;
