@@ -15,6 +15,8 @@
 #include <queue>
 #include <memory>
 #include <signal.h>
+#include "parser.h"
+#include "executor.h"
 
 
 
@@ -35,6 +37,10 @@ struct client_handler {
     void handle() {
         last_run = time(0);
         data = read(fd, buf, BUFFERSIZE);
+        //*****
+        auto res = parse_path(buf);
+        on_request_recieved(res, fd);
+        //*****
 
     }
 
