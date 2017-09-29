@@ -5,10 +5,10 @@
 
 using namespace std;
 
-const string cgi_path = "/usr/local/cgi-server/cgi-bin/";
+const string cgi_path = "";
 
 vector<string> parse_path(string path) {
-    string word = "/cgi-bin/";
+    string word = "";
     int pos = -1;
     for (int i = 0; i < szof(path) - szof(word) + 1; ++i) {
         if (path[i] == '?') {

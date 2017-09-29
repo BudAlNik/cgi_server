@@ -19,7 +19,6 @@
 #include "executor.h"
 
 
-
 const int EPOLL_MAX_EVENTS_NUMBER = 10;
 const time_t TIMEOUT_CONSTANT = 30;
 
@@ -119,6 +118,7 @@ int main() {
     int socketfd;
     int evfd;
     int port = htons(8004);
+    cerr << port << "\n";
     signal(SIGPIPE, SIG_IGN);
     if (signal(SIGINT, [](int signo) {
                    if (signo == SIGINT) {
@@ -148,5 +148,6 @@ int main() {
             }
         }
     }
+
     return 0;
 }
