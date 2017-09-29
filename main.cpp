@@ -117,7 +117,7 @@ void handle_client(const int fd) {
 int main() {
     int socketfd;
     int evfd;
-    int port = htons(8004);
+    int port = 8004;
     cerr << port << "\n";
     signal(SIGPIPE, SIG_IGN);
     if (signal(SIGINT, [](int signo) {
