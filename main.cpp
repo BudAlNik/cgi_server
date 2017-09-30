@@ -50,20 +50,21 @@ struct client_handler {
                 return;
             }
             if (data + read_>= BUFFERSIZE) {
-                data += read_;
                 event.events |= EPOLLOUT;
                 return;
             }
             //*****
             auto res = parse_path(buf + data, read_);
             printf("handling client %d\n", fd);
+            data += read_;
             on_request_recieved(res, fd);
+            data -= read_;
             //*****
             return;
         }
         if ((event.events & EPOLLOUT) && (data < BUFFERSIZE)) {
             event.events |= EPOLLIN;
-        }
+        }   
     }
 
 private:

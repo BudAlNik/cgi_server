@@ -54,6 +54,9 @@ void execute_cgi(vector<string> argv, int fd) {
 
 ssize_t write_no_signal(int fd, const void *buf, size_t count) {
     int res;
+    if (count == 0) {
+        return 0;
+    }
     while(true) {
         res = write(fd, buf, count);
         // TODO: check if partial writes are possible
