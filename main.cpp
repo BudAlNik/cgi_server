@@ -22,6 +22,8 @@
 const int EPOLL_MAX_EVENTS_NUMBER = 10;
 const time_t TIMEOUT_CONSTANT = 30;
 
+void epoll_stop(const int evfd, epoll_event& event, const int clientfd);
+
 struct client_handler;
 
 static std::unordered_map<int, std::shared_ptr<client_handler>> clients;
@@ -37,21 +39,30 @@ struct client_handler {
         return last_run;
     }
 
-    void handle() {
-        last_run = time(0);
-        data = read(fd, buf, BUFFERSIZE);
-        if (data == 0) {
-            printf("removing client %d\n", fd);
-            close(fd);
-            clients.erase(fd);
+    void handle(epoll_event& event) {
+        if (event.events & EPOLLIN) {
+            last_run = time(0);
+            data = read(fd, buf, BUFFERSIZE);
+            if (data == 0) {
+                printf("removing client %d\n", fd);
+                close(fd);
+                clients.erase(fd);
+                return;
+            }
+            if (data >= BUFFERSIZE) {
+                event.events |= EPOLLOUT;
+                return;
+            }
+            //*****
+            auto res = parse_path(buf);
+            printf("handling client %d\n", fd);
+            on_request_recieved(res, fd);
+            //*****
             return;
         }
-        //*****
-        auto res = parse_path(buf);
-        printf("handling client %d\n", fd);
-        on_request_recieved(res, fd);
-        //*****
-
+        if ((event.events & EPOLLOUT) && (data < BUFFERSIZE)) {
+            event.events |= EPOLLIN;
+        }
     }
 
 private:
@@ -121,9 +132,12 @@ void epoll_add(const int evfd, const int socketfd, sockaddr_in &client_addr, soc
     }
 }
 
-void handle_client(const int fd) {
-    auto it = clients.find(fd);
-    it->second->handle();
+void handle_client(epoll_event& event) {
+    auto it = clients.find(event.data.fd);
+    if (it == clients.end()) {
+        return;
+    }
+    it->second->handle(event);
     return;
 }
 
@@ -161,7 +175,7 @@ int main() {
                     epoll_add(evfd, socketfd, client_addr, socklen);
                 }
             } else {
-                handle_client(events[i].data.fd);
+                handle_client(events[i]);
             }
         }
     }
