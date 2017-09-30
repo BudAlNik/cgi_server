@@ -36,8 +36,14 @@ struct client_handler {
     void handle() {
         last_run = time(0);
         data = read(fd, buf, BUFFERSIZE);
+        if (data == 0) {
+            printf("removing client %d\n", fd);
+            close(fd);
+            return;
+        }
         //*****
         auto res = parse_path(buf);
+        printf("handling client %d\n", fd);
         on_request_recieved(res, fd);
         //*****
 
