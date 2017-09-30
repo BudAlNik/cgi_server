@@ -92,6 +92,12 @@ void create_epoll(int &evfd, const int socketfd) {
     epoll_ctl(evfd, EPOLL_CTL_ADD, socketfd, &event);
 }
 
+void epoll_stop(const int evfd, epoll_event& event, const int clientfd) {
+    printf("break connection with %d\n", clientfd);
+    epoll_ctl(evfd, EPOLL_CTL_DEL, clientfd, &event);
+    clients.erase(clientfd);
+}
+
 void epoll_add(const int evfd, const int socketfd, sockaddr_in &client_addr, socklen_t socklen) {
     int clientfd = accept4(socketfd, reinterpret_cast<sockaddr *>(&client_addr), &socklen,
                            SOCK_NONBLOCK | SOCK_CLOEXEC);
@@ -142,8 +148,13 @@ int main() {
         int event_num = epoll_wait(evfd, events, EPOLL_MAX_EVENTS_NUMBER, TIMEOUT_CONSTANT);
         for (size_t i = 0; i < event_num; i++) {
             if (events[i].data.fd == socketfd) {
-                epoll_add(evfd, socketfd, client_addr, socklen);
+                if ((events[i].events & EPOLLERR) || (events[i].events & EPOLLRDHUP)) {
+                    epoll_stop(evfd, events[i], events[i].data.fd);
+                } else {
+                    epoll_add(evfd, socketfd, client_addr, socklen);
+                }
             } else {
+
                 handle_client(events[i].data.fd);
             }
         }
