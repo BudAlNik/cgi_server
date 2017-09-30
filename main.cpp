@@ -42,19 +42,20 @@ struct client_handler {
     void handle(epoll_event& event) {
         if (event.events & EPOLLIN) {
             last_run = time(0);
-            data = read(fd, buf, BUFFERSIZE);
-            if (data == 0) {
+            int read_ = read(fd, buf, BUFFERSIZE);
+            if (read_ == 0) {
                 printf("removing client %d\n", fd);
                 close(fd);
                 clients.erase(fd);
                 return;
             }
-            if (data >= BUFFERSIZE) {
+            if (data + read_>= BUFFERSIZE) {
+                data += read_;
                 event.events |= EPOLLOUT;
                 return;
             }
             //*****
-            auto res = parse_path(buf);
+            auto res = parse_path(buf + data, read_);
             printf("handling client %d\n", fd);
             on_request_recieved(res, fd);
             //*****
