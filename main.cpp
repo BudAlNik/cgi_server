@@ -22,6 +22,8 @@
 const int EPOLL_MAX_EVENTS_NUMBER = 10;
 const time_t TIMEOUT_CONSTANT = 30;
 
+struct client_handler;
+
 static std::unordered_map<int, std::shared_ptr<client_handler>> clients;
 
 struct client_handler {
