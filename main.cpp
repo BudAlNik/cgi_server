@@ -22,6 +22,8 @@
 const int EPOLL_MAX_EVENTS_NUMBER = 10;
 const time_t TIMEOUT_CONSTANT = 30;
 
+static std::unordered_map<int, std::shared_ptr<client_handler>> clients;
+
 struct client_handler {
     client_handler(const int evfd_, const int fd_) : evfd(evfd_), fd(fd_), data(0), last_run(time(0)) {}
 
@@ -39,6 +41,7 @@ struct client_handler {
         if (data == 0) {
             printf("removing client %d\n", fd);
             close(fd);
+            clients.erase(fd);
             return;
         }
         //*****
@@ -58,8 +61,6 @@ private:
     time_t last_run;
 };
 
-static std::unordered_map<int, std::shared_ptr<client_handler>> clients;
-static std::queue<std::pair<time_t, std::shared_ptr<client_handler>>> timeout_queue;
 
 void error(const std::string &msg, int error_code) {
     std::cerr << msg << "\n";
@@ -109,7 +110,6 @@ void epoll_add(const int evfd, const int socketfd, sockaddr_in &client_addr, soc
                            SOCK_NONBLOCK | SOCK_CLOEXEC);
     printf("adding client %d\n", clientfd);
     if (clientfd >= 0) {
-//        epoll_ctl_helper(evfd, clientfd, EPOLL_CTL_ADD, EPOLLIN);
         epoll_event event;
         event.data.fd = clientfd;
         event.events = EPOLLIN;
@@ -120,7 +120,6 @@ void epoll_add(const int evfd, const int socketfd, sockaddr_in &client_addr, soc
 }
 
 void handle_client(const int fd) {
-//    printf("handling client %d\n", fd);
     auto it = clients.find(fd);
     it->second->handle();
     return;
@@ -160,7 +159,6 @@ int main() {
                     epoll_add(evfd, socketfd, client_addr, socklen);
                 }
             } else {
-
                 handle_client(events[i].data.fd);
             }
         }
