@@ -4,6 +4,6 @@
 #include <string>
 #include <vector>
 
-std::vector<std::string> parse_path(std::string path);
+std::vector<std::string> parse_path(char *, int);
 
 #endif
