@@ -7,12 +7,7 @@ using namespace std;
 
 const string cgi_path = "cgi-bin/";
 
-vector<string> parse_path(char* chars, int len) {
-    string path = "";
-    path.resize(len);
-    for (int i = 0; i < len; ++i) {
-        path[i] = chars[i];
-    }
+vector<string> parse_path(string& path) {
     string word = "";
     int pos = -1;
     for (int i = 0; i < szof(path) - szof(word) + 1; ++i) {

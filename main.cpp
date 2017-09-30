@@ -1,5 +1,6 @@
 #include <iostream>
 #include <sys/epoll.h>
+#include <vector>
 #include <cstring>
 #include <stdio.h>
 #include <stdlib.h>
@@ -54,11 +55,24 @@ struct client_handler {
                 return;
             }
             //*****
-            auto res = parse_path(buf + data, read_);
-            printf("handling client %d\n", fd);
-            data += read_;
-            on_request_recieved(res, fd);
-            data -= read_;
+            std::string cur = "";
+            for (int i = 0; i < data + read_; i++) {
+                if (buf[i] != '\n') {
+                    cur += buf[i];
+                } else {
+                    commands.push_back(cur);
+                    cur = "";
+                }
+            }
+            for (int i = 0; i < (int)cur.size(); i++) {
+                buf[i] = cur[i];
+            }
+            data = cur.size();
+            for (auto c : commands) {
+                auto res = parse_path(c);
+                printf("handling client %d\n", fd);
+                on_request_recieved(res, fd);
+            }
             //*****
             return;
         }
@@ -74,6 +88,7 @@ private:
     int data;
     int state;
     time_t last_run;
+    std::vector<string> commands;
 };
 
 
