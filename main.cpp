@@ -75,8 +75,7 @@ struct client_handler {
                     if (forks == FORKLIMIT) 
                         continue;
                     forks++;
-                    on_request_recieved(res, fd);
-                    forks--;
+                    on_request_recieved(res, fd, forks);
                     break;
                 }
             }
@@ -90,7 +89,7 @@ struct client_handler {
 
 private:
     const static int BUFFERSIZE = 2048;
-    const static int FORKLIMIT = 64;
+    const static int FORKLIMIT = 8;
     char buf[BUFFERSIZE];
     const int fd, evfd;
     int data;

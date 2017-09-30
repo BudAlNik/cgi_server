@@ -7,7 +7,7 @@
 
 using namespace std;
 
-void on_request_recieved(vector<string> argv, int fd);
+void on_request_recieved(vector<string> argv, int fd, int& forks);
 void execute_cgi(vector<string> argv, int fd);
 ssize_t write_no_signal(int fd, const void *buf, size_t count);
 

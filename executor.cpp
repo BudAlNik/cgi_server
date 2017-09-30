@@ -1,21 +1,24 @@
 
 #include "executor.h"
 #include <unistd.h>
+#include <sys/wait.h>
 
 using namespace std;
 const int SZ = 256;
 
 
-void on_request_recieved(vector<string> argv, int fd) {
+void on_request_recieved(vector<string> argv, int fd, int& forks) {
     pid_t p = fork();
+    int status;
     if (p == -1) {
         // raise error
         return;
     } else if (p != 0) {
+        waitpid(p, &status, 0);
+        forks--;
         return;
     } else {
         execute_cgi(argv, fd);
-        
         exit(0);
     }
 }
@@ -60,6 +63,10 @@ ssize_t write_no_signal(int fd, const void *buf, size_t count) {
     }
     while(true) {
         res = write(fd, buf, count);
+        if (res == 0) {
+            cerr <<"ERROR\n";
+            return 0;
+        }
         // TODO: check if partial writes are possible
         if (res == -1 && errno == EINTR) {
             continue;
