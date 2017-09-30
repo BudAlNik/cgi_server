@@ -15,6 +15,7 @@ void on_request_recieved(vector<string> argv, int fd) {
         return;
     } else {
         execute_cgi(argv, fd);
+        
         exit(0);
     }
 }
