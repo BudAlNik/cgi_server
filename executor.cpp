@@ -17,7 +17,7 @@ void on_request_recieved(vector<string> argv, int fd, bool& forked) {
     if (p != 0) {
 
         int status;
-        waitpid(p, &status, WNOHANG);
+        while (waitpid(p, &status, WNOHANG) != p) {}
 
         dup2(fdoldout, 1);
         dup2(fd, fdpr);

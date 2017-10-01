@@ -54,7 +54,6 @@ struct client_handler {
                 event.events |= EPOLLOUT;
                 return;
             }
-            //*****
             std::string cur = "";
             for (int i = 0; i < data + read_; i++) {
                 if (buf[i] != '\n') {
@@ -70,16 +69,16 @@ struct client_handler {
             data = cur.size();
             for (auto c : commands) {
                 auto res = parse_path(c);
-                printf("handling client %d\n", fd);
+//                printf("handling client %d\n", fd);
                 while (true) {
                     if (forked) 
                         continue;
+                    printf("handling client %d\n", fd);
                     forked = true;
                     on_request_recieved(res, fd, forked);
                     break;
                 }
             }
-            //*****
             commands.clear();
             return;
         }
