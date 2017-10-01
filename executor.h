@@ -8,7 +8,6 @@
 using namespace std;
 
 void on_request_recieved(vector<string> argv, int fd, bool& forked);
-void execute_cgi(vector<string> argv, int fd);
-ssize_t write_no_signal(int fd, const void *buf, size_t count);
+int execute_cgi(vector<string> argv, int fd);
 
 #endif

@@ -8,71 +8,37 @@ const int SZ = 256;
 
 
 void on_request_recieved(vector<string> argv, int fd, bool& forked) {
+    int fdoldout = dup(1);
+    int fdpr = dup(fd);
+    dup2(fd, 1);
+
+
+    int p = execute_cgi(argv, fd);
+    int status;
+    waitpid(p, &status, WNOHANG);
+
+    dup2(fdoldout, 1);
+    dup2(fd, fdpr);
+    close(fdoldout);
+    close(fdpr);
+    forked = false;
+}
+
+int execute_cgi(vector<string> argv, int fd) {
     pid_t p = fork();
     int status;
     if (p == -1) {
         // raise error
-        return;
-    } else if (p != 0) {
-        waitpid(p, &status, 0);
-        forked = false;
-        return;
-    } else {
-        execute_cgi(argv, fd);
+        return -1;
+    } else if (p == 0) {
+        const char* args[argv.size() + 1];
+        for (int i = 0; i < argv.size(); i++) {
+            args[i] = argv[i].c_str();
+        }
+        args[argv.size()] = 0;
+        execv(argv[0].c_str(), (char* const*)args);
         exit(0);
     }
-}
 
-void execute_cgi(vector<string> argv, int fd) {
-    string command = "";
-    string file_ = argv[0];
-    for (auto s : argv) {
-        command += s + " ";
-    }
-    
-    auto p = popen(command.c_str(), "r");
-    
-    if (!p) {
-        return;
-    }
-    
-    char buf[SZ];
-    while (!feof(p)) {
-        size_t cnt = fread(buf, 1, SZ, p);
-        if (cnt == 0) {
-            // raise error
-            break;
-        }
-
-        int res = write_no_signal(fd, buf, cnt);
-        if (res == -1) {
-            // raise error
-            break;
-        }
-    }
-    
-    if (pclose(p) == -1) {
-        return;
-    }
-    return;
-}
-
-ssize_t write_no_signal(int fd, const void *buf, size_t count) {
-    int res;
-    if (count == 0) {
-        return 0;
-    }
-    while(true) {
-        res = write(fd, buf, count);
-        if (res == 0) {
-            cerr <<"ERROR\n";
-            return 0;
-        }
-        // TODO: check if partial writes are possible
-        if (res == -1 && errno == EINTR) {
-            continue;
-        }
-        break;
-    }
-    return res;
+    return p;
 }

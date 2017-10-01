@@ -30,7 +30,7 @@ struct client_handler;
 static std::unordered_map<int, std::shared_ptr<client_handler>> clients;
 
 struct client_handler {
-    client_handler(const int evfd_, const int fd_) : evfd(evfd_), fd(fd_), data(0), last_run(time(0)), forks(0) {}
+    client_handler(const int evfd_, const int fd_) : evfd(evfd_), fd(fd_), data(0), last_run(time(0)), forked(false) {}
 
     int get_fd() {
         return fd;
@@ -72,14 +72,15 @@ struct client_handler {
                 auto res = parse_path(c);
                 printf("handling client %d\n", fd);
                 while (true) {
-                    if (forks == FORKLIMIT) 
+                    if (forked) 
                         continue;
-                    forks++;
-                    on_request_recieved(res, fd, forks);
+                    forked = true;
+                    on_request_recieved(res, fd, forked);
                     break;
                 }
             }
             //*****
+            commands.clear();
             return;
         }
         if ((event.events & EPOLLOUT) && (data < BUFFERSIZE)) {
@@ -89,11 +90,10 @@ struct client_handler {
 
 private:
     const static int BUFFERSIZE = 2048;
-    const static int FORKLIMIT = 8;
     char buf[BUFFERSIZE];
     const int fd, evfd;
     int data;
-    int forks;
+    bool forked;
     int state;
     time_t last_run;
     std::vector<string> commands;

@@ -5,7 +5,7 @@
 
 using namespace std;
 
-const string cgi_path = "cgi-bin/";
+const string cgi_path = "";
 
 vector<string> parse_path(string& path) {
     string word = "";
