@@ -25,12 +25,14 @@
 
 const int EPOLL_MAX_EVENTS_NUMBER = 10;
 const time_t TIMEOUT_CONSTANT = 30;
+const int SZ = 1e9;
 
 void epoll_stop(const int evfd, epoll_event& event, const int clientfd);
 
 struct client_handler;
 
 static std::unordered_map<int, std::shared_ptr<client_handler>> clients;
+static std::vector<bool> block;
 
 struct client_handler {
     client_handler(const int evfd_, const int fd_) : evfd(evfd_), fd(fd_), data(0), last_run(time(0)), forked(false) {}
@@ -50,6 +52,7 @@ struct client_handler {
             if (read_ == 0) {
                 cerr << "removing client " << fd << endl;
                 close(fd);
+                block[fd] = true;
                 clients.erase(fd);
                 return;
             }
@@ -176,6 +179,7 @@ void handle_client(epoll_event& event) {
     return;
 }
 
+
 int main() {
     int socketfd;
     int evfd;
@@ -200,17 +204,20 @@ int main() {
     create_epoll(evfd, socketfd);
 
     while (true) {
+        block.resize(SZ, false);
         static epoll_event events[EPOLL_MAX_EVENTS_NUMBER];
         int event_num = epoll_wait(evfd, events, EPOLL_MAX_EVENTS_NUMBER, TIMEOUT_CONSTANT);
         for (size_t i = 0; i < event_num; i++) {
-            if (events[i].data.fd == socketfd) {
-                if ((events[i].events & EPOLLERR) || (events[i].events & EPOLLRDHUP)) {
-                    epoll_stop(evfd, events[i], events[i].data.fd);
+            if (!block[events[i].data.fd]) {
+                if (events[i].data.fd == socketfd) {
+                    if ((events[i].events & EPOLLERR) || (events[i].events & EPOLLRDHUP)) {
+                        epoll_stop(evfd, events[i], events[i].data.fd);
+                    } else {
+                        epoll_add(evfd, socketfd, client_addr, socklen);
+                    }
                 } else {
-                    epoll_add(evfd, socketfd, client_addr, socklen);
+                    handle_client(events[i]);
                 }
-            } else {
-                handle_client(events[i]);
             }
         }
     }
