@@ -10,21 +10,16 @@ const int SZ = 256;
 void on_request_recieved(vector<string> argv, int fd, bool& forked) {
     int fdoldout = dup(1);
     int fdpr = dup(fd);
+    int status;
     dup2(fd, 1);
 
-
     int p = execute_cgi(argv, fd);
-    if (p != 0) {
-
-        int status;
-        while (waitpid(p, &status, WNOHANG) != p) {}
-
-        dup2(fdoldout, 1);
-        dup2(fd, fdpr);
-        close(fdoldout);
-        close(fdpr);
-        forked = false;
-    }
+    waitpid(p, &status, 0);
+    dup2(fdoldout, 1);
+    dup2(fd, fdpr);
+    close(fdoldout);
+    close(fdpr);
+    forked = false;
 }
 
 int execute_cgi(vector<string> argv, int fd) {
@@ -40,7 +35,7 @@ int execute_cgi(vector<string> argv, int fd) {
         }
         args[argv.size()] = 0;
         execv(argv[0].c_str(), (char* const*)args);
-        exit(0);
+        exit(EXIT_SUCCESS);
     }
 
     return p;
