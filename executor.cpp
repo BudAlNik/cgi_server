@@ -14,14 +14,17 @@ void on_request_recieved(vector<string> argv, int fd, bool& forked) {
 
 
     int p = execute_cgi(argv, fd);
-    int status;
-    waitpid(p, &status, WNOHANG);
+    if (p != 0) {
 
-    dup2(fdoldout, 1);
-    dup2(fd, fdpr);
-    close(fdoldout);
-    close(fdpr);
-    forked = false;
+        int status;
+        waitpid(p, &status, WNOHANG);
+
+        dup2(fdoldout, 1);
+        dup2(fd, fdpr);
+        close(fdoldout);
+        close(fdpr);
+        forked = false;
+    }
 }
 
 int execute_cgi(vector<string> argv, int fd) {
