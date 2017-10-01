@@ -25,7 +25,7 @@
 
 const int EPOLL_MAX_EVENTS_NUMBER = 10;
 const time_t TIMEOUT_CONSTANT = 30;
-const int SZ = 1e9;
+const int SZ = 10000;
 
 void epoll_stop(const int evfd, epoll_event& event, const int clientfd);
 
@@ -204,7 +204,7 @@ int main() {
     create_epoll(evfd, socketfd);
 
     while (true) {
-        block.resize(SZ, false);
+        block = std::vector<bool> (SZ, false);
         static epoll_event events[EPOLL_MAX_EVENTS_NUMBER];
         int event_num = epoll_wait(evfd, events, EPOLL_MAX_EVENTS_NUMBER, TIMEOUT_CONSTANT);
         for (size_t i = 0; i < event_num; i++) {
