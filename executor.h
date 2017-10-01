@@ -7,7 +7,7 @@
 
 using namespace std;
 
-void on_request_recieved(vector<string> argv, int fd, bool& forked);
-int execute_cgi(vector<string> argv, int fd);
+void on_request_recieved(vector<string> argv, const int& fd, bool& forked);
+int execute_cgi(vector<string> argv);
 
 #endif

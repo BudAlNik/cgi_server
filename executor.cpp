@@ -7,13 +7,13 @@ using namespace std;
 const int SZ = 256;
 
 
-void on_request_recieved(vector<string> argv, int fd, bool& forked) {
+void on_request_recieved(vector<string> argv, const int& fd, bool& forked) {
     int fdoldout = dup(1);
     int fdpr = dup(fd);
     int status;
     dup2(fd, 1);
 
-    int p = execute_cgi(argv, fd);
+    int p = execute_cgi(argv);
     waitpid(p, &status, 0);
     dup2(fdoldout, 1);
     dup2(fd, fdpr);
@@ -22,7 +22,7 @@ void on_request_recieved(vector<string> argv, int fd, bool& forked) {
     forked = false;
 }
 
-int execute_cgi(vector<string> argv, int fd) {
+int execute_cgi(vector<string> argv) {
     pid_t p = fork();
     int status;
     if (p == -1) {

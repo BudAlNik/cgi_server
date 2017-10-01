@@ -52,7 +52,8 @@ struct client_handler {
             }
             if (data + read_>= BUFFERSIZE) {
                 event.events |= EPOLLOUT;
-                return;
+                read_ = BUFFERSIZE - data;
+                // return;
             }
             std::string cur = "";
             for (int i = 0; i < data + read_; i++) {
@@ -71,12 +72,12 @@ struct client_handler {
                 auto res = parse_path(c);
 //                printf("handling client %d\n", fd);
                 while (true) {
-                    if (forked) 
-                        continue;
-                    printf("handling client %d\n", fd);
-                    forked = true;
-                    on_request_recieved(res, fd, forked);
-                    break;
+                    if (!forked) {
+                        printf("handling client %d\n", fd);
+                        forked = true;
+                        on_request_recieved(res, fd, forked);
+                        break;
+                    }
                 }
             }
             commands.clear();
