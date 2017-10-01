@@ -16,6 +16,9 @@
 #include <queue>
 #include <memory>
 #include <signal.h>
+#include <atomic>
+#include <thread>
+#include <mutex>
 #include "parser.h"
 #include "executor.h"
 
@@ -45,7 +48,7 @@ struct client_handler {
             last_run = time(0);
             int read_ = read(fd, buf, BUFFERSIZE);
             if (read_ == 0) {
-                printf("removing client %d\n", fd);
+                cerr << "removing client " << fd << endl;
                 close(fd);
                 clients.erase(fd);
                 return;
@@ -68,17 +71,22 @@ struct client_handler {
                 buf[i] = cur[i];
             }
             data = cur.size();
-            for (auto c : commands) {
-                auto res = parse_path(c);
-//                printf("handling client %d\n", fd);
-                while (true) {
-                    if (!forked) {
-                        printf("handling client %d\n", fd);
-                        forked = true;
-                        on_request_recieved(res, fd, forked);
-                        break;
+            if (!forked) {
+                std::lock_guard<std::mutex> lck(mtx);
+                for (auto c : commands) {
+                    auto res = parse_path(c);
+                    cerr << "handling client " << fd << endl;
+                    forked = true;
+                    try {
+                        thread t(on_request_recieved, res, std::ref(fd), std::ref(forked));
+                        t.detach();
+                    } catch (exception e) {
+                        cerr << e.what() << endl;
                     }
+                    break;
                 }
+            } else {
+                // cerr << "client is busy " << fd << endl;
             }
             commands.clear();
             return;
@@ -88,13 +96,15 @@ struct client_handler {
         }   
     }
 
+protected:
+    std::atomic_bool forked;
 private:
-    const static int BUFFERSIZE = 2048;
+    const static int BUFFERSIZE = 512;
     char buf[BUFFERSIZE];
     const int fd, evfd;
     int data;
-    bool forked;
     int state;
+    mutex mtx;
     time_t last_run;
     std::vector<string> commands;
 };
@@ -146,7 +156,7 @@ void epoll_stop(const int evfd, epoll_event& event, const int clientfd) {
 void epoll_add(const int evfd, const int socketfd, sockaddr_in &client_addr, socklen_t socklen) {
     int clientfd = accept4(socketfd, reinterpret_cast<sockaddr *>(&client_addr), &socklen,
                            SOCK_NONBLOCK | SOCK_CLOEXEC);
-    printf("adding client %d\n", clientfd);
+    cerr << "adding client " <<  clientfd << endl;
     if (clientfd >= 0) {
         epoll_event event;
         event.data.fd = clientfd;
@@ -174,12 +184,12 @@ int main() {
     signal(SIGPIPE, SIG_IGN);
     if (signal(SIGINT, [](int signo) {
                    if (signo == SIGINT) {
-                       std::cout << "SIGINT\n";
+                       std::cerr << "SIGINT\n";
                        exit(0);
                    }
                }
     ) == SIG_ERR) {
-        std::cout << "Can't handle signals\n";
+        std::cerr << "Can't handle signals\n";
         exit(0);
     }
     sockaddr_in server_addr, client_addr;

@@ -2,12 +2,13 @@
 #include "executor.h"
 #include <unistd.h>
 #include <sys/wait.h>
+#include <atomic>
 
 using namespace std;
 const int SZ = 256;
 
 
-void on_request_recieved(vector<string> argv, const int& fd, bool& forked) {
+void on_request_recieved(vector<string> argv, const int& fd, std::atomic_bool& forked) {
     int fdoldout = dup(1);
     int fdpr = dup(fd);
     int status;
@@ -34,7 +35,10 @@ int execute_cgi(vector<string> argv) {
             args[i] = argv[i].c_str();
         }
         args[argv.size()] = 0;
-        execv(argv[0].c_str(), (char* const*)args);
+        int c = execv(argv[0].c_str(), (char* const*)args);
+        if (c == -1) {
+            cerr << "can't find script " << args[0] <<  endl;
+        }
         exit(EXIT_SUCCESS);
     }
 
