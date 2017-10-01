@@ -7,7 +7,7 @@ using namespace std;
 const int SZ = 256;
 
 
-void on_request_recieved(vector<string> argv, int fd, int& forks) {
+void on_request_recieved(vector<string> argv, int fd, bool& forked) {
     pid_t p = fork();
     int status;
     if (p == -1) {
@@ -15,7 +15,7 @@ void on_request_recieved(vector<string> argv, int fd, int& forks) {
         return;
     } else if (p != 0) {
         waitpid(p, &status, 0);
-        forks--;
+        forked = false;
         return;
     } else {
         execute_cgi(argv, fd);
@@ -25,6 +25,7 @@ void on_request_recieved(vector<string> argv, int fd, int& forks) {
 
 void execute_cgi(vector<string> argv, int fd) {
     string command = "";
+    string file_ = argv[0];
     for (auto s : argv) {
         command += s + " ";
     }
