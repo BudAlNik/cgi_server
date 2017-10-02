@@ -54,6 +54,7 @@ struct client_handler {
                 close(fd);
                 block[fd] = true;
                 clients.erase(fd);
+                commands.clear();
                 return;
             }
             if (data + read_>= BUFFERSIZE) {
@@ -102,7 +103,7 @@ struct client_handler {
 protected:
     std::atomic_bool forked;
 private:
-    const static int BUFFERSIZE = 512;
+    const static int BUFFERSIZE = 2048;
     char buf[BUFFERSIZE];
     const int fd, evfd;
     int data;
