@@ -54,7 +54,6 @@ struct client_handler {
                 close(fd);
                 block[fd] = true;
                 clients.erase(fd);
-                commands.clear();
                 return;
             }
             if (data + read_>= BUFFERSIZE) {
@@ -62,23 +61,27 @@ struct client_handler {
                 read_ = BUFFERSIZE - data;
                 // return;
             }
-            std::string cur = "";
-            for (int i = 0; i < data + read_; i++) {
-                if (buf[i] != '\n') {
-                    cur += buf[i];
-                } else {
-                    commands.push_back(cur);
-                    cur = "";
-                }
-            }
-            for (int i = 0; i < (int)cur.size(); i++) {
-                buf[i] = cur[i];
-            }
-            data = cur.size();
-            if (!forked) {
-                std::lock_guard<std::mutex> lck(mtx);
-                for (auto c : commands) {
-                    auto res = parse_path(c);
+            data += read_;
+            while (true) {
+                if (!forked) {
+                    std::string cur = "";
+                    for (int i = 0; i < data; i++) {
+                        cur += buf[i];
+                        if (buf[i] == '\n') {
+                            break;
+                        }
+                    }
+                    if (cur.back() != '\n' ) {
+                        break;
+                    }
+                    // cerr << cur << ' ' << cur.size() << ' ' << data << ' ' << data - (int)cur.size() + 1 << '\n';
+                    for (int i = 0; i < data - (int)cur.size(); i++) {
+                        buf[i] = buf[i + (int)cur.size()];
+                    }
+                    data = data - (int)cur.size();
+                    std::lock_guard<std::mutex> lck(mtx);
+                    cur = cur.substr(0, cur.size() - 1);
+                    auto res = parse_path(cur);
                     cerr << "handling client " << fd << endl;
                     forked = true;
                     try {
@@ -87,12 +90,11 @@ struct client_handler {
                     } catch (exception e) {
                         cerr << e.what() << endl;
                     }
-                    break;
+                } else {
+                    // cerr << "client is busy " << fd << endl;
+                    // break;
                 }
-            } else {
-                // cerr << "client is busy " << fd << endl;
             }
-            commands.clear();
             return;
         }
         if ((event.events & EPOLLOUT) && (data < BUFFERSIZE)) {
@@ -103,14 +105,13 @@ struct client_handler {
 protected:
     std::atomic_bool forked;
 private:
-    const static int BUFFERSIZE = 2048;
+    const static int BUFFERSIZE = 512;
     char buf[BUFFERSIZE];
     const int fd, evfd;
     int data;
     int state;
     mutex mtx;
     time_t last_run;
-    std::vector<string> commands;
 };
 
 
